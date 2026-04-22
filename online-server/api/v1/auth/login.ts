@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { loginTenantUser } from '../../../src/services/auth.service.js'
-import { getRequestIp, readJsonBody, sendApiError, sendJson, sendMethodNotAllowed } from '../../_shared.js'
+import { ensureControlDbReady, getRequestIp, readJsonBody, sendApiError, sendJson, sendMethodNotAllowed } from '../../_shared.js'
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'POST') {
@@ -9,6 +9,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   try {
+    await ensureControlDbReady()
     const body = await readJsonBody(req)
     const result = await loginTenantUser({
       tenantCode: String(body.tenantCode || ''),

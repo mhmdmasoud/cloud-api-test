@@ -1,5 +1,8 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { migrateControlDb, seedSystemAdmin } from '../src/db/migrations.js'
 import { AppError } from '../src/utils/errors.js'
+
+let controlDbReadyPromise: Promise<void> | null = null
 
 export const readJsonBody = async (req: IncomingMessage) => {
   const chunks: Buffer[] = []
@@ -51,4 +54,14 @@ export const getRequestIp = (req: IncomingMessage) => {
   return String(forwardedValue || realIpValue || req.socket?.remoteAddress || '')
     .split(',')[0]
     .trim()
+}
+
+export const ensureControlDbReady = async () => {
+  if (!controlDbReadyPromise) {
+    controlDbReadyPromise = (async () => {
+      await migrateControlDb()
+      await seedSystemAdmin()
+    })()
+  }
+  await controlDbReadyPromise
 }
