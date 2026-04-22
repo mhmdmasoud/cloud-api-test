@@ -1,0 +1,58 @@
+import cors from '@fastify/cors'
+import helmet from '@fastify/helmet'
+import Fastify from 'fastify'
+import { ZodError } from 'zod'
+import { AppError } from './utils/errors.js'
+import { registerAdminRoutes } from './routes/admin.routes.js'
+import { registerAuthRoutes } from './routes/auth.routes.js'
+import { registerDevicesRoutes } from './routes/devices.routes.js'
+import { registerHealthRoutes } from './routes/health.routes.js'
+import { registerLicenseRoutes } from './routes/license.routes.js'
+import { registerMigrationRoutes } from './routes/migration.routes.js'
+import { registerOnlineSettingsRoutes } from './routes/online-settings.routes.js'
+import { registerTenantsRoutes } from './routes/tenants.routes.js'
+
+export const buildApp = async () => {
+  const app = Fastify({
+    logger: true,
+  })
+
+  await app.register(cors, { origin: true })
+  await app.register(helmet)
+
+  app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof ZodError) {
+      reply.status(400).send({
+        success: false,
+        errorCode: 'VALIDATION_ERROR',
+        message: error.issues[0]?.message || 'Invalid request',
+      })
+      return
+    }
+    if (error instanceof AppError) {
+      reply.status(error.statusCode).send({
+        success: false,
+        errorCode: error.errorCode,
+        message: error.message,
+      })
+      return
+    }
+    const message = error instanceof Error ? error.message : 'Internal server error'
+    reply.status(500).send({
+      success: false,
+      errorCode: 'INTERNAL_SERVER_ERROR',
+      message,
+    })
+  })
+
+  await registerHealthRoutes(app)
+  await registerAdminRoutes(app)
+  await registerTenantsRoutes(app)
+  await registerAuthRoutes(app)
+  await registerDevicesRoutes(app)
+  await registerLicenseRoutes(app)
+  await registerOnlineSettingsRoutes(app)
+  await registerMigrationRoutes(app)
+
+  return app
+}
