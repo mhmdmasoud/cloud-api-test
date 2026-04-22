@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { loginTenantUser } from '../../../src/services/auth.service.js'
-import { readJsonBody, sendApiError, sendJson, sendMethodNotAllowed } from '../../_shared.js'
+import { getRequestIp, readJsonBody, sendApiError, sendJson, sendMethodNotAllowed } from '../../_shared.js'
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'POST') {
@@ -18,7 +18,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       deviceName: String(body.deviceName || ''),
       windowsUsername: String(body.windowsUsername || ''),
       machineFingerprint: String(body.machineFingerprint || ''),
-      ipAddress: String(req.socket.remoteAddress || ''),
+      ipAddress: getRequestIp(req),
     })
     sendJson(res, 200, result)
   } catch (error) {

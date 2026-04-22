@@ -42,3 +42,13 @@ export const sendApiError = (res: ServerResponse, error: unknown) => {
     message,
   })
 }
+
+export const getRequestIp = (req: IncomingMessage) => {
+  const forwardedFor = req.headers['x-forwarded-for']
+  const realIp = req.headers['x-real-ip']
+  const forwardedValue = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor
+  const realIpValue = Array.isArray(realIp) ? realIp[0] : realIp
+  return String(forwardedValue || realIpValue || req.socket?.remoteAddress || '')
+    .split(',')[0]
+    .trim()
+}
