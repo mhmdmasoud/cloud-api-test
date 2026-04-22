@@ -4,8 +4,8 @@ export const registerHealthRoutes = async (app: FastifyInstance) => {
   for (const routePath of ['/health', '/api/health', '/api/v1/health']) {
     app.get(routePath, async () => ({
       ok: true,
-      service: 'ysale-online-api',
-      mode: 'online-foundation',
+      service: 'YSale Online Server',
+      status: 'healthy',
     }))
   }
 }
