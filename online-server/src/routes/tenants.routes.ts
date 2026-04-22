@@ -79,15 +79,15 @@ const deviceStatusSchema = z.object({
 })
 
 export const registerTenantsRoutes = async (app: FastifyInstance) => {
-  const createPaths = ['/admin/tenants', '/api/admin/tenants', '/api/v1/admin/tenants']
-  const itemPaths = ['/admin/tenants/:id', '/api/admin/tenants/:id', '/api/v1/admin/tenants/:id']
-  const statusPaths = ['/admin/tenants/:id/status', '/api/admin/tenants/:id/status', '/api/v1/admin/tenants/:id/status']
-  const subscriptionPaths = ['/admin/tenants/:id/subscription', '/api/admin/tenants/:id/subscription', '/api/v1/admin/tenants/:id/subscription']
-  const licensePaths = ['/admin/tenants/:id/license', '/api/admin/tenants/:id/license', '/api/v1/admin/tenants/:id/license']
-  const devicesPaths = ['/admin/tenants/:id/devices', '/api/admin/tenants/:id/devices', '/api/v1/admin/tenants/:id/devices']
-  const adminUserPaths = ['/admin/tenants/:id/admin-user', '/api/admin/tenants/:id/admin-user', '/api/v1/admin/tenants/:id/admin-user']
-  const deviceStatusPaths = ['/admin/tenants/:id/devices/:deviceId/status', '/api/admin/tenants/:id/devices/:deviceId/status', '/api/v1/admin/tenants/:id/devices/:deviceId/status']
-  const deviceDeletePaths = ['/admin/tenants/:id/devices/:deviceId', '/api/admin/tenants/:id/devices/:deviceId', '/api/v1/admin/tenants/:id/devices/:deviceId']
+  const createPaths = ['/admin/tenant-records', '/api/admin/tenant-records', '/api/v1/admin/tenant-records']
+  const itemPaths = ['/admin/tenant-records/:id', '/api/admin/tenant-records/:id', '/api/v1/admin/tenant-records/:id']
+  const statusPaths = ['/admin/tenant-records/:id/status', '/api/admin/tenant-records/:id/status', '/api/v1/admin/tenant-records/:id/status']
+  const subscriptionPaths = ['/admin/tenant-records/:id/subscription', '/api/admin/tenant-records/:id/subscription', '/api/v1/admin/tenant-records/:id/subscription']
+  const licensePaths = ['/admin/tenant-records/:id/license', '/api/admin/tenant-records/:id/license', '/api/v1/admin/tenant-records/:id/license']
+  const devicesPaths = ['/admin/tenant-records/:id/devices', '/api/admin/tenant-records/:id/devices', '/api/v1/admin/tenant-records/:id/devices']
+  const adminUserPaths = ['/admin/tenant-records/:id/admin-user', '/api/admin/tenant-records/:id/admin-user', '/api/v1/admin/tenant-records/:id/admin-user']
+  const deviceStatusPaths = ['/admin/tenant-records/:id/devices/:deviceId/status', '/api/admin/tenant-records/:id/devices/:deviceId/status', '/api/v1/admin/tenant-records/:id/devices/:deviceId/status']
+  const deviceDeletePaths = ['/admin/tenant-records/:id/devices/:deviceId', '/api/admin/tenant-records/:id/devices/:deviceId', '/api/v1/admin/tenant-records/:id/devices/:deviceId']
 
   for (const routePath of createPaths) {
     app.post(routePath, { preHandler: adminMiddleware }, async (request) => {
