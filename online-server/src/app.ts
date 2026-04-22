@@ -17,7 +17,7 @@ export const buildApp = async () => {
     logger: true,
   })
 
-  await app.register(cors, { origin: true })
+  await app.register(cors, { origin: true, credentials: true })
   await app.register(helmet)
 
   app.setErrorHandler((error, _request, reply) => {
@@ -26,6 +26,10 @@ export const buildApp = async () => {
         success: false,
         errorCode: 'VALIDATION_ERROR',
         message: error.issues[0]?.message || 'Invalid request',
+        details: error.issues.map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
       })
       return
     }
