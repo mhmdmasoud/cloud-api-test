@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "build": "npm --prefix online-server install && npm --prefix online-server run build"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.2",
