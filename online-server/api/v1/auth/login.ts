@@ -1,19 +1,27 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { buildApp } from '../../../src/app.js'
-
-let appPromise: ReturnType<typeof buildApp> | null = null
-
-const getApp = async () => {
-  if (!appPromise) {
-    appPromise = buildApp().then(async (app) => {
-      await app.ready()
-      return app
-    })
-  }
-  return appPromise
-}
+import { loginTenantUser } from '../../../src/services/auth.service.js'
+import { readJsonBody, sendApiError, sendJson, sendMethodNotAllowed } from '../../_shared.js'
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
-  const app = await getApp()
-  app.server.emit('request', req, res)
+  if (req.method !== 'POST') {
+    sendMethodNotAllowed(res)
+    return
+  }
+
+  try {
+    const body = await readJsonBody(req)
+    const result = await loginTenantUser({
+      tenantCode: String(body.tenantCode || ''),
+      username: String(body.username || ''),
+      password: String(body.password || ''),
+      deviceId: String(body.deviceId || ''),
+      deviceName: String(body.deviceName || ''),
+      windowsUsername: String(body.windowsUsername || ''),
+      machineFingerprint: String(body.machineFingerprint || ''),
+      ipAddress: String(req.socket.remoteAddress || ''),
+    })
+    sendJson(res, 200, result)
+  } catch (error) {
+    sendApiError(res, error)
+  }
 }
