@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { migrateControlDb, seedSystemAdmin } from '../src/db/migrations.js'
+import { type AdminJwtPayload, verifyToken } from '../src/utils/jwt.js'
 import { AppError } from '../src/utils/errors.js'
 
 let controlDbReadyPromise: Promise<void> | null = null
@@ -64,4 +65,17 @@ export const ensureControlDbReady = async () => {
     })()
   }
   await controlDbReadyPromise
+}
+
+export const requireAdminBearer = (req: IncomingMessage) => {
+  const authorization = req.headers.authorization
+  const value = Array.isArray(authorization) ? authorization[0] : authorization
+  if (!value?.toLowerCase().startsWith('bearer ')) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Unauthorized')
+  }
+  const payload = verifyToken<AdminJwtPayload>(value.slice(7).trim())
+  if (payload.tokenType !== 'system-admin') {
+    throw new AppError(401, 'UNAUTHORIZED', 'Unauthorized')
+  }
+  return payload
 }
