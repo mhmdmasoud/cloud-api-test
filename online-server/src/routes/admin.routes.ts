@@ -52,15 +52,15 @@ const statusSchema = z.object({
   isActive: z.boolean(),
 })
 
-const createTenantSchema = z.object({
+const tenantMutationSchema = z.object({
   tenantCode: z.string().min(1),
   companyName: z.string().min(1),
   ownerName: z.string().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
   notes: z.string().optional(),
-  adminUsername: z.string().min(1),
-  adminPassword: z.string().min(6),
+  adminUsername: z.string().min(1).optional(),
+  adminPassword: z.string().min(6).optional(),
   adminFullName: z.string().optional(),
   operationMode: z.string().optional(),
   allowedDevices: z.number().int().min(1).optional(),
@@ -79,11 +79,37 @@ const createTenantSchema = z.object({
   autoStartOnWindows: z.boolean().optional(),
 })
 
-const updateTenantSchema = createTenantSchema.partial()
+const createTenantSchema = tenantMutationSchema.superRefine((value, ctx) => {
+  const hasAdminUsername = Boolean(String(value.adminUsername || '').trim())
+  const hasAdminPassword = Boolean(String(value.adminPassword || '').trim())
+  if (hasAdminUsername !== hasAdminPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'adminUsername and adminPassword must be provided together',
+      path: hasAdminUsername ? ['adminPassword'] : ['adminUsername'],
+    })
+  }
+})
+
+const updateTenantSchema = tenantMutationSchema.partial()
 
 export const registerAdminRoutes = async (app: FastifyInstance) => {
-  const loginPaths = ['/admin/login', '/api/admin/login', '/api/v1/admin/login']
-  const mePaths = ['/admin/me', '/api/admin/me', '/api/v1/admin/me']
+  const loginPaths = [
+    '/admin/login',
+    '/api/admin/login',
+    '/api/v1/admin/login',
+    '/developer/auth/login',
+    '/api/developer/auth/login',
+    '/api/v1/developer/auth/login',
+  ]
+  const mePaths = [
+    '/admin/me',
+    '/api/admin/me',
+    '/api/v1/admin/me',
+    '/developer/auth/me',
+    '/api/developer/auth/me',
+    '/api/v1/developer/auth/me',
+  ]
   const dashboardPaths = ['/admin/dashboard', '/api/admin/dashboard', '/api/v1/admin/dashboard']
   const tenantsPaths = ['/admin/tenants', '/api/admin/tenants', '/api/v1/admin/tenants']
   const tenantByCodePaths = ['/admin/tenants/:tenantCode', '/api/admin/tenants/:tenantCode', '/api/v1/admin/tenants/:tenantCode']

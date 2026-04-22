@@ -1,5 +1,5 @@
 import { controlDb } from '../db/controlDb.js'
-import { badRequest, notFound } from '../utils/errors.js'
+import { badRequest, conflict, notFound } from '../utils/errors.js'
 import { maskDatabaseUrl } from '../utils/crypto.js'
 import { hashPassword } from '../utils/password.js'
 import { countActiveTenantDevices, listTenantDevices } from './devices.service.js'
@@ -13,8 +13,8 @@ export type CreateTenantInput = {
   phone?: string
   address?: string
   notes?: string
-  adminUsername: string
-  adminPassword: string
+  adminUsername?: string
+  adminPassword?: string
   adminFullName?: string
   operationMode?: string
   allowedDevices?: number
@@ -166,7 +166,12 @@ export const createTenant = async (input: CreateTenantInput) => {
   const companyName = String(input.companyName || '').trim()
   const adminUsername = String(input.adminUsername || '').trim().toLowerCase()
   const adminPassword = String(input.adminPassword || '')
-  if (!tenantCode || !companyName || !adminUsername || !adminPassword) {
+  const hasAdminUsername = Boolean(adminUsername)
+  const hasAdminPassword = Boolean(adminPassword)
+  if (hasAdminUsername !== hasAdminPassword) {
+    throw badRequest('VALIDATION_ERROR', 'adminUsername and adminPassword must be provided together')
+  }
+  if (!tenantCode || !companyName) {
     throw badRequest('VALIDATION_ERROR', 'Missing required tenant fields')
   }
   const operationMode = normalizeOperationMode(input.operationMode)
@@ -215,14 +220,16 @@ export const createTenant = async (input: CreateTenantInput) => {
         [tenantId, String(input.tenantDatabaseUrl || '').trim()],
       )
     }
-    const passwordHash = await hashPassword(adminPassword)
-    await client.query(
-      `
-        INSERT INTO users (tenant_id, username, password_hash, full_name, role, permissions)
-        VALUES ($1, $2, $3, $4, 'admin', '{}'::JSONB)
-      `,
-      [tenantId, adminUsername, passwordHash, String(input.adminFullName || 'Tenant Admin').trim()],
-    )
+    if (hasAdminUsername && hasAdminPassword) {
+      const passwordHash = await hashPassword(adminPassword)
+      await client.query(
+        `
+          INSERT INTO users (tenant_id, username, password_hash, full_name, role, permissions)
+          VALUES ($1, $2, $3, $4, 'admin', '{}'::JSONB)
+        `,
+        [tenantId, adminUsername, passwordHash, String(input.adminFullName || 'Tenant Admin').trim()],
+      )
+    }
     await client.query(
       `
         INSERT INTO subscriptions (tenant_id, status, starts_at, expires_at)
@@ -234,6 +241,9 @@ export const createTenant = async (input: CreateTenantInput) => {
     return getTenantById(tenantId, { includeSecrets: true })
   } catch (error) {
     await client.query('ROLLBACK')
+    if (typeof error === 'object' && error && 'code' in error && error.code === '23505') {
+      throw conflict('TENANT_ALREADY_EXISTS', 'Tenant code already exists')
+    }
     throw error
   } finally {
     client.release()

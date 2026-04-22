@@ -20,6 +20,14 @@ export const buildApp = async () => {
   await app.register(cors, { origin: true, credentials: true })
   await app.register(helmet)
 
+  app.setNotFoundHandler((request, reply) => {
+    reply.status(404).send({
+      success: false,
+      errorCode: 'ROUTE_NOT_FOUND',
+      message: `Route ${request.method} ${request.url} not found`,
+    })
+  })
+
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
       reply.status(400).send({
