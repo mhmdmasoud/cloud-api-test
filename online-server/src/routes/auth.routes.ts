@@ -23,6 +23,7 @@ export const registerAuthRoutes = async (app: FastifyInstance) => {
       return loginTenantUser({
         ...body,
         ipAddress: String(request.ip || ''),
+        logger: request.log,
       })
     })
   }

@@ -1,8 +1,22 @@
+import type { FastifyBaseLogger } from 'fastify'
 import { controlDb } from '../db/controlDb.js'
 import { badRequest, forbidden, unauthorized } from '../utils/errors.js'
+import { loadEnv } from '../config/env.js'
+import { describeDatabaseUrl } from '../db/connectionDiagnostics.js'
 import { signTenantToken } from '../utils/jwt.js'
 import { verifyPassword } from '../utils/password.js'
 import { assertTenantDeviceAllowed, upsertDeviceLogin } from './devices.service.js'
+
+type AuthLogger = Pick<FastifyBaseLogger, 'info' | 'warn' | 'error'>
+
+const writeLog = (logger: AuthLogger | Console, level: 'info' | 'warn' | 'error', payload: Record<string, unknown>, message: string) => {
+  const target = logger as Record<string, (...args: unknown[]) => void>
+  if (logger === console) {
+    target[level](message, payload)
+    return
+  }
+  target[level](payload, message)
+}
 
 export const loginTenantUser = async (payload: {
   tenantCode: string
@@ -13,12 +27,25 @@ export const loginTenantUser = async (payload: {
   windowsUsername?: string
   machineFingerprint?: string
   ipAddress?: string
+  logger?: AuthLogger
 }) => {
   const tenantCode = payload.tenantCode.trim().toUpperCase()
   const username = payload.username.trim().toLowerCase()
+  const logger = payload.logger || console
   if (!tenantCode || !username || !payload.password || !payload.deviceId.trim()) {
     throw badRequest('VALIDATION_ERROR', 'Missing login fields')
   }
+  const env = loadEnv()
+  writeLog(
+    logger,
+    'info',
+    {
+      tenantCode,
+      loginUsername: username,
+      ...describeDatabaseUrl(env.CONTROL_DATABASE_URL, 'CONTROL_DATABASE_URL'),
+    },
+    'tenant login infrastructure: resolved database connection config',
+  )
   const tenantResult = await controlDb.query<{
     id: string
     tenant_code: string
